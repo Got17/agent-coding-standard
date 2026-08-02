@@ -5,7 +5,11 @@ export default defineConfig({
   description: "High-production deployment standards for humans and AI agents",
   cleanUrls: true,
   srcDir: './docs',
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]
+  ],
   themeConfig: {
+    logo: '/favicon.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'General', link: '/general/architecture-patterns' },

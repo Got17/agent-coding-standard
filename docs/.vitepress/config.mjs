@@ -4,7 +4,11 @@ export default defineConfig({
   title: "Production Coding Standard",
   description: "High-production deployment standards for humans and AI agents",
   cleanUrls: true,
+  head: [
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }]
+  ],
   themeConfig: {
+    logo: '/favicon.svg',
     nav: [
       { text: 'Home', link: '/' },
       { text: 'General', link: '/general/architecture-patterns' },
