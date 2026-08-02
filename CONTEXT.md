@@ -21,6 +21,18 @@
 - **AGENTS-backend Database Safety**: Strict Expand-Migrate-Contract zero-downtime migrations, parameterized SQL only, N+1 query ban with statement timeouts, zero network I/O inside DB transactions, and mandatory 4-key audit metadata (`created_at`, `updated_at`, `created_by`, `updated_by`).
 - **AGENTS-backend Operations & Testing**: Structured JSON logging with trace/correlation ID context, automatic PII masking, dual health probes (`/healthz/liveness`, `/healthz/readiness`), explicit network timeouts, graceful SIGTERM shutdown with 30s drain, containerized integration tests, and CI contract diff checks.
 - **AGENTS-backend Code Quality & Documentation**: Mandatory 7th pillar adding SOLID, pragmatic DRY, YAGNI/KISS simplicity, guard clauses (early exits), intent-based comments (why not what), and docstring/contract synchronization.
+- **AGENTS-frontend Scope**: Universal production baseline for frontend web applications, extended by framework/meta-framework templates (e.g., AGENTS-nextjs.md).
+- **AGENTS-frontend Pillars**: 7 core pillars: (1) Component Architecture & Layering, (2) State Management & Data Fetching, (3) Web Performance & Core Web Vitals, (4) Security & Auth Baseline, (5) Accessibility (a11y) & UX Invariants, (6) Testing Strategy & QA, (7) Code Quality, CSS Maintainability & Design Tokens.
+- **AGENTS-frontend Pillar 1 (Component Architecture)**: Strict pure presentation vs container/hook logic separation, immutable typed props contracts (`type`/`interface`), ~150-line / max 3 state limit per component, and named exports baseline.
+- **AGENTS-frontend Pillar 2 (State & Data Fetching)**: Decouple server state (async cache) from client UI state, zero state duplication into local component state, explicit mutation invalidation keys/optimistic rollbacks, and retry caps with localized error boundaries.
+- **AGENTS-frontend Pillar 3 (Performance & Web Vitals)**: Strict Core Web Vitals SLA (LCP < 2.5s, INP < 200ms, CLS < 0.1), dynamic import code-splitting for heavy components, zero CLS via explicit image dimensions/aspect ratios, path-level tree-shakeable imports, and font-display swap.
+- **AGENTS-frontend Pillar 4 (Security & Auth Baseline)**: DOMPurify-sanitized HTML injection only, no tokens/PII in localStorage (httpOnly SameSite cookies required), same-origin whitelist on redirects, and CSP/X-Frame-Options/HSTS headers enforced.
+- **AGENTS-frontend Pillar 5 (Accessibility & UX)**: WCAG 2.1 AA minimum (4.5:1 contrast), full keyboard navigation via WAI-ARIA patterns, no outline:none without accessible replacement, semantic HTML over div+ARIA, and aria-live announcements for async feedback states.
+- **AGENTS-frontend Pillar 6 (Testing & QA)**: 60% unit (hooks/logic), 30% component tests via Testing Library (getByRole over getByTestId), 10% E2E smoke; MSW for network interception, fake timers for async, and mandatory CRUD + auth + error boundary E2E coverage.
+- **AGENTS-frontend Pillar 7 (Code Quality & CSS Architecture)**: Design token baseline (CSS variables for colors/spacing), scoped CSS co-location, early-return guard clauses (no nested ternary JSX), pragmatic DRY/YAGNI, and intent-based comments.
+- **Deployment Standard**: Production Dokploy PaaS deployment using Dokploy Native Static Provider (`npm run docs:build` publishing `docs/.vitepress/dist`), removing container/Nginx overhead.
+
+
 
 
 
