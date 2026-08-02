@@ -4,14 +4,15 @@
 
 ## Core Templates
 
-- **[AGENTS-backend.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-backend.md)**: Production rules for Node.js, Python, Go, APIs, and databases.
-- **[AGENTS-frontend.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-frontend.md)**: Production rules for React, Next.js, UI, state management, and web performance.
-- **[AGENTS-fullstack.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-fullstack.md)**: Combined frontend + backend rules for fullstack applications.
-- **[AGENTS-devops.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-devops.md)**: Containerization, Kubernetes, CI/CD, and IaC rules.
+- **[AGENTS-backend.md](/templates/AGENTS-backend)**: Production rules for Node.js, Python, Go, APIs, and databases.
+- **[AGENTS-frontend.md](/templates/AGENTS-frontend)**: Production rules for React, Next.js, UI, state management, and web performance.
+- **[AGENTS-fullstack.md](/templates/AGENTS-fullstack)**: Combined frontend + backend rules for fullstack applications.
+- **[AGENTS-devops.md](/templates/AGENTS-devops)**: Containerization, Kubernetes, CI/CD, and IaC rules.
 
 ## Stack-Specific Templates
 
-- **[AGENTS-nodejs.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-nodejs.md)**
-- **[AGENTS-fastapi.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-fastapi.md)**
-- **[AGENTS-nextjs.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-nextjs.md)**
-- **[AGENTS-go.md](file:///D:/Coding/projects/agent-coding-standard/templates/AGENTS-go.md)**
+- **[AGENTS-nodejs.md](/templates/AGENTS-nodejs)**
+- **[AGENTS-fastapi.md](/templates/AGENTS-fastapi)**
+- **[AGENTS-nextjs.md](/templates/AGENTS-nextjs)**
+- **[AGENTS-go.md](/templates/AGENTS-go)**
+

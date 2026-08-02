@@ -13,7 +13,9 @@
 - **Primary Audience**: Human developers and AI coding agents.
 - **Distribution Model**: Dual format per standard — Human-readable documentation + Portable `AGENTS.md` prompt blocks for instant project copying.
 - **Repository Structure**: Option A — Separated `docs/` (for static site & human reading) and `templates/` (for copy-pasteable `AGENTS.md` files).
-- **Doc Engine**: VitePress initialized at root (`.vitepress/config.mjs`) reading directly from `docs/`.
+- **Doc Engine**: VitePress configured in `docs/.vitepress/config.mjs` and synced at root (`.vitepress/config.mjs`) serving `docs/`.
+- **AGENTS Templates Web Routes**: Standardized in `docs/templates/` with web links updated in `docs/templates-index.md`.
+- **AGENTS-backend Scope**: Language-agnostic universal production baseline for backend services, extended by framework/language-specific templates.
 
 
 

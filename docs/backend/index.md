@@ -1,0 +1,14 @@
+# Backend Production Standards
+
+> Overview of all backend deployment and architecture standards for human developers and AI coding agents.
+
+## Included Backend Standards
+
+- **[API Design (REST / gRPC / GraphQL)](/backend/api-design)**: REST guidelines, gRPC contracts, error response structures.
+- **[Node.js & TypeScript Standard](/backend/nodejs-typescript)**: Strict type checking, async/await patterns, error propagation.
+- **[Python & FastAPI Standard](/backend/python-fastapi)**: Pydantic v2 validation, dependency injection, async handlers.
+- **[Go Backend Standard](/backend/go)**: Idiomatic error handling, context propagation, package structure.
+- **[Database & Migrations](/backend/database-orm)**: Migration safety, indexing strategies, ORM best practices.
+- **[Auth & Session Management](/backend/auth-session)**: JWT access tokens, httpOnly cookies, RBAC authorization.
+- **[Resilience & Caching](/backend/resilience-caching)**: Redis caching strategies, circuit breakers, rate limiting.
+- **[Structured Logging & Telemetry](/backend/logging-observability)**: JSON log formats, correlation IDs, OpenTelemetry integration.

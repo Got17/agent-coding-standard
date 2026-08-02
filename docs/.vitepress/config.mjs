@@ -4,7 +4,6 @@ export default defineConfig({
   title: "Production Coding Standard",
   description: "High-production deployment standards for humans and AI agents",
   cleanUrls: true,
-  srcDir: './docs',
   themeConfig: {
     nav: [
       { text: 'Home', link: '/' },
