@@ -4,12 +4,11 @@
   "description": "Production-grade software development standards for humans and AI agents.",
   "type": "module",
   "scripts": {
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs",
-    "build": "npm run docs:build"
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs"
   },
   "devDependencies": {
-    "vitepress": "^1.0.0"
+    "vitepress": "^1.5.0"
   }
 }
