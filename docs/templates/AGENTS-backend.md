@@ -44,4 +44,11 @@
 - [ ] **Deterministic Test State**: Tests MUST NOT share mutable state across runs. Use test data factories over static SQL dumps.
 - [ ] **Contract Validation in CI**: Automatically run OpenAPI / Proto schema diff validation in CI pipelines to prevent unintended breaking changes.
 
+## 7. Code Quality, Maintainability & Documentation
+- [ ] **SOLID Alignment**: Enforce Single Responsibility (SRP) per module and Dependency Inversion (DIP) via injected interface abstractions. Maintain high cohesion and low coupling.
+- [ ] **Pragmatic DRY & YAGNI**: Consolidate duplicated business rules in a single source of truth, but avoid hasty/speculative abstractions (AHA principle). Do NOT write unused generic parameters, dead code, or speculative plugin hooks.
+- [ ] **Guard Clauses Over Deep Nesting**: Prefer early returns/exit guard clauses over deeply nested `if-else` branches to keep cyclomatic complexity low and readability high.
+- [ ] **Self-Documenting Code & Intent Comments**: Write descriptive, domain-aligned variable and function names. Comments MUST explain non-obvious business rationale (*why*), never repeating *what* readable code already expresses.
+- [ ] **Docstrings & Contract Sync**: Keep inline API docstrings, module documentation, and external spec files (OpenAPI/Protobuf) 100% in sync whenever signatures or data models change.
+
 <!-- END AGENT-STANDARD: BACKEND-PRODUCTION -->

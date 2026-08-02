@@ -20,6 +20,7 @@
 - **AGENTS-backend API Invariants**: Unified 5-key error JSON envelope (`code`, `message`, `details`, `timestamp`, `request_id`) and Zero-Trust boundary input validation (rejecting unexpected fields with 400 Bad Request).
 - **AGENTS-backend Database Safety**: Strict Expand-Migrate-Contract zero-downtime migrations, parameterized SQL only, N+1 query ban with statement timeouts, zero network I/O inside DB transactions, and mandatory 4-key audit metadata (`created_at`, `updated_at`, `created_by`, `updated_by`).
 - **AGENTS-backend Operations & Testing**: Structured JSON logging with trace/correlation ID context, automatic PII masking, dual health probes (`/healthz/liveness`, `/healthz/readiness`), explicit network timeouts, graceful SIGTERM shutdown with 30s drain, containerized integration tests, and CI contract diff checks.
+- **AGENTS-backend Code Quality & Documentation**: Mandatory 7th pillar adding SOLID, pragmatic DRY, YAGNI/KISS simplicity, guard clauses (early exits), intent-based comments (why not what), and docstring/contract synchronization.
 
 
 
