@@ -1,0 +1,20 @@
+# Agent Coding Standard
+
+> Production-grade software development standards for humans and AI agents.
+
+## Index
+
+- Domain Context & Glossary: CONTEXT.md
+- Repo Rules for Agents: AGENTS.md
+- Copy-Paste Templates:
+  - Backend Standard: templates/AGENTS-backend.md
+  - Frontend Standard: templates/AGENTS-frontend.md
+  - Fullstack Standard: templates/AGENTS-fullstack.md
+  - DevOps Standard: templates/AGENTS-devops.md
+
+## Documentation Sections
+- General: docs/general/
+- Frontend: docs/frontend/
+- Backend: docs/backend/
+- DevOps: docs/devops/
+- Security: docs/security/
