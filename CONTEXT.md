@@ -31,8 +31,14 @@
 - **AGENTS-frontend Pillar 6 (Testing & QA)**: 60% unit (hooks/logic), 30% component tests via Testing Library (getByRole over getByTestId), 10% E2E smoke; MSW for network interception, fake timers for async, and mandatory CRUD + auth + error boundary E2E coverage.
 - **AGENTS-frontend Pillar 7 (Code Quality & CSS Architecture)**: Design token baseline (CSS variables for colors/spacing), scoped CSS co-location, early-return guard clauses (no nested ternary JSX), pragmatic DRY/YAGNI, and intent-based comments.
 - **Deployment Standard**: Production Dokploy PaaS deployment using Dokploy Native Static Provider (`npm run docs:build` publishing `docs/.vitepress/dist`), removing container/Nginx overhead.
-
-
+- **AGENTS-frontend Additional Rules (post-review)**: Three rules added post-review: (1) Error Boundary Telemetry — boundary errors MUST be sent to observability service (Sentry/Datadog), not swallowed; (2) URL as Authoritative State — shareable UI state SHOULD live in URL search params, not useState/global store; (3) Visual Regression Testing — SHOULD run Chromatic/Percy/Playwright snapshots on design-token and shared component PRs.
+- **AGENTS-nextjs Scope**: Next.js App Router (v13+) specific rules layered on top of AGENTS-frontend.md. Covers 6 pillars: (1) RSC Hygiene, (2) Routing & URL Patterns, (3) Rendering Strategy & Data Fetching, (4) Server Actions & Route Handlers, (5) Security Headers & Middleware, (6) Testing (Next.js additions).
+- **AGENTS-nextjs Pillar 1 (RSC Hygiene)**: Server Components by default; 'use client' pushed to leaves only; no async fetching in Client Components; server-only package for secret isolation.
+- **AGENTS-nextjs Pillar 2 (Routing & URL)**: App Router file conventions; useRouter() only for navigation; searchParams validated via Zod/nuqs; generateStaticParams for bounded dynamic routes.
+- **AGENTS-nextjs Pillar 3 (Rendering & Caching)**: SSG/ISR preferred over SSR; explicit fetch() cache options (no implicit defaults); revalidatePath/revalidateTag on mutations; Suspense streaming for slow data.
+- **AGENTS-nextjs Pillar 4 (Server Actions & Route Handlers)**: Zod validation on all inputs; service layer delegation (no direct DB in actions); Route Handlers return unified error envelope; no mutations in GET handlers.
+- **AGENTS-nextjs Pillar 5 (Security)**: Security headers via next.config.js (CSP, X-Frame-Options, HSTS, Permissions-Policy); Edge middleware guards for protected routes; no secrets in NEXT_PUBLIC_ env vars.
+- **AGENTS-nextjs Pillar 6 (Testing)**: next/jest transformer required; Server Components tested via Playwright or renderToString; Route Handlers tested via full HTTP cycle; Next.js internals mocked only with documented justification.
 
 
 

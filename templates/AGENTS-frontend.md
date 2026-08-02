@@ -10,7 +10,7 @@ NON-NEGOTIABLE FRONTEND RULES (enforce every PR):
 3. Performance: LCP < 2.5s / INP < 200ms / CLS < 0.1 @ p75 mobile; LCP element MUST use fetchpriority="high" + preload; dynamic import() for heavy components; WebP/AVIF images with explicit dimensions; path-level tree-shaking; font-display:swap.
 4. Security: DOMPurify for any raw HTML injection; no tokens/PII in localStorage (httpOnly SameSite cookies); same-origin redirect whitelist; CSP + X-Frame-Options:DENY + HSTS; SRI on all third-party CDN scripts.
 5. a11y: WCAG 2.1 AA (4.5:1 contrast); full keyboard nav via WAI-ARIA patterns; no outline:none without replacement; semantic HTML first; aria-live for async feedback.
-6. Testing: 60% unit / 30% component (getByRole over getByTestId) / 10% E2E; axe-core on every component test; MSW for network; fake timers; E2E must cover auth + CRUD + error boundary.
+6. Testing: 60% unit / 30% component (getByRole over getByTestId) / 10% E2E; axe-core on every component test; MSW for network; fake timers; E2E must cover auth + CRUD + error boundary; visual regression SHOULD cover design-token and shared component changes (Chromatic/Playwright snapshots).
 7. Code quality: CSS custom property tokens only (no magic hex/px); scoped CSS co-location; early-return guard clauses; no nested ternary JSX; DRY at 3+ duplications; intent comments (why, not what).
 -->
 
@@ -27,6 +27,8 @@ NON-NEGOTIABLE FRONTEND RULES (enforce every PR):
 - [ ] **Zero State Duplication**: Copying API response data into local component state (`useState`) or global UI stores is strictly forbidden. Derived state MUST be calculated on-the-fly or via memoized selectors (`useMemo`).
 - [ ] **Mutation Lifecycle & Invalidation**: Data mutations MUST declare explicit cache invalidation keys or optimistic updates with automatic error rollback handlers. Hard page reloads (`window.location.reload()`) to refresh state are strictly banned — instead, use the data-fetching library's explicit cache invalidation APIs (e.g. `queryClient.invalidateQueries()`).
 - [ ] **Query Hygiene & Error Boundaries**: Network queries MUST specify explicit `staleTime` defaults and exponential backoff retry policies (e.g. max 2 retries, zero retries on 4xx client errors). Unhandled query errors MUST trigger localized error fallback boundaries rather than crashing the full UI tree.
+- [ ] **Error Boundary Telemetry**: Errors caught by error boundaries MUST be reported to a centralized observability service (e.g. Sentry, Datadog, or equivalent) before rendering the fallback UI. Silent swallowing of boundary errors or `console.error`-only logging is strictly forbidden in production.
+- [ ] **URL as Authoritative State for Shareable UI**: Shareable UI state — search filters, pagination cursors, active tabs, sort order — SHOULD be encoded in URL search parameters (`?page=2&filter=active`) rather than component `useState` or global stores. This ensures deep-linking, browser back/forward navigation, and SSR hydration correctness.
 
 ## 3. Web Performance & Core Web Vitals
 - [ ] **Core Web Vitals Thresholds**: Production pages MUST maintain strict Core Web Vitals budgets on 75th percentile mobile runs: Largest Contentful Paint (LCP) < 2.5s, Interaction to Next Paint (INP) < 200ms, Cumulative Layout Shift (CLS) < 0.1.
@@ -57,6 +59,7 @@ NON-NEGOTIABLE FRONTEND RULES (enforce every PR):
 - [ ] **Automated Accessibility Assertions**: Every component test MUST run `axe-core` (e.g. via `jest-axe`: `expect(await axe(container)).toHaveNoViolations()`) to programmatically detect WCAG violations. Manual visual review alone is insufficient.
 - [ ] **E2E Smoke Coverage**: At minimum, the following critical user flows MUST have E2E test coverage: auth (login/logout), primary create/read/update/delete flow, and error boundary rendering.
 - [ ] **Deterministic & Isolated Tests**: Tests MUST NOT depend on real network calls. Network requests MUST be intercepted using MSW (Mock Service Worker) or equivalent. No `setTimeout` for fake async timing — use fake timers.
+- [ ] **Visual Regression Testing**: Projects maintaining a shared component library or design system SHOULD run visual regression snapshots (e.g. Chromatic, Percy, or Playwright `toHaveScreenshot()`) on every PR touching design tokens or shared components. Pixel-diff thresholds MUST be committed to version control and reviewed as part of the PR.
 
 ## 7. Code Quality, CSS Maintainability & Design Tokens
 - [ ] **Design Token Baseline**: All visual values (colors, spacing, typography scales, border radii, shadows) MUST be defined as CSS custom properties (`--token-name`) in a single design token file. Hardcoded magic hex values or raw pixel numbers scattered in component styles are strictly forbidden.
