@@ -9,10 +9,4 @@
 - **[AGENTS-fullstack.md](/templates/AGENTS-fullstack)**: 8-pillar production baseline bridging frontend and backend — workspace isolation, E2E type safety, SSR/hydration, auth/security, E2E testing, observability, deployment orchestration, and code quality.
 - **[AGENTS-devops.md](/templates/AGENTS-devops)**: Containerization, Kubernetes, CI/CD, and IaC rules.
 
-## Stack-Specific Templates
-
-- **[AGENTS-nodejs.md](/templates/AGENTS-nodejs)**
-- **[AGENTS-fastapi.md](/templates/AGENTS-fastapi)**
-- **[AGENTS-nextjs.md](/templates/AGENTS-nextjs)**
-- **[AGENTS-go.md](/templates/AGENTS-go)**
 

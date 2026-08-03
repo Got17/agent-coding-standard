@@ -88,10 +88,7 @@ export default defineConfig({
             { text: 'AGENTS Frontend', link: '/templates/AGENTS-frontend' },
             { text: 'AGENTS Fullstack', link: '/templates/AGENTS-fullstack' },
             { text: 'AGENTS DevOps', link: '/templates/AGENTS-devops' },
-            { text: 'AGENTS Node.js', link: '/templates/AGENTS-nodejs' },
-            { text: 'AGENTS FastAPI', link: '/templates/AGENTS-fastapi' },
-            { text: 'AGENTS Next.js', link: '/templates/AGENTS-nextjs' },
-            { text: 'AGENTS Go', link: '/templates/AGENTS-go' }
+
           ]
         }
       ]
