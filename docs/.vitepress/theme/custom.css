@@ -1,0 +1,9 @@
+/* Allow the site title to wrap on multiple lines instead of overflowing */
+.VPNavBarTitle .title {
+  white-space: normal !important;
+  line-height: 1.3;
+}
+
+.VPNavBarTitle .title span {
+  white-space: normal !important;
+}
