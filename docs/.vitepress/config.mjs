@@ -36,6 +36,7 @@ export default defineConfig({
           text: 'Frontend Production Standards',
           items: [
             { text: 'React & Next.js Standard', link: '/frontend/react-nextjs' },
+            { text: 'Next.js Frontend Structure', link: '/frontend/nextjs-frontend-structure' },
             { text: 'State Management', link: '/frontend/state-management' },
             { text: 'Styling & UI Architecture', link: '/frontend/css-ui' },
             { text: 'Web Performance & Vitals', link: '/frontend/web-performance' },
