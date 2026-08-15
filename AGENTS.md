@@ -9,6 +9,7 @@ This repository maintains production standards for high-reliability software dep
 3. **Keep `CONTEXT.md` Updated**: Whenever new domain terms or architectural decisions are finalized with the user, update `CONTEXT.md` immediately using inline updates.
 4. **Author Standards Collaboratively**: Do not auto-generate full arbitrary contents for standard files unless instructed by the user. Draft stubs first, then flesh out each topic together with the user.
 5. **Format Rules**: Use standard Markdown, clear heading hierarchies (H1 -> H2 -> H3), clean syntax highlighting, and avoid fluff.
+6. **Wait for Explicit Approval**: Do not execute next steps, file edits, commits, or major actions until the user explicitly approves or says "APPROVE" / gives explicit go-ahead.
 
 ## Agent skills
 
