@@ -50,7 +50,7 @@ export default defineConfig({
             { text: 'API Design (REST/gRPC/GraphQL)', link: '/backend/api-design' },
             { text: 'Node.js & TypeScript Standard', link: '/backend/nodejs-typescript' },
             { text: 'Python & FastAPI Standard', link: '/backend/python-fastapi' },
-            { text: 'Go Backend Standard', link: '/backend/go' },
+            { text: 'Go REST Hexagonal Standard', link: '/backend/go-rest-hexagonal' },
             { text: 'Database & Migrations', link: '/backend/database-orm' },
             { text: 'Auth & Session Management', link: '/backend/auth-session' },
             { text: 'Resilience & Caching', link: '/backend/resilience-caching' },
