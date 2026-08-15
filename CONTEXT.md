@@ -20,6 +20,18 @@
 - **XSS (Cross-Site Scripting)**: Injection flaw that allows attacker-controlled JavaScript to execute in an application's origin.
 - **CORS (Cross-Origin Resource Sharing)**: Browser-controlled protocol for allowing or denying JavaScript calls between different origins.
 - **AAL (Authenticator Assurance Level)**: NIST term for the strength of an authentication event.
+- **Secret**: Any value that grants access, proves identity, signs trust, decrypts data, or enables privileged operations.
+- **Secret Store / Vault**: Managed system for storing, retrieving, auditing, rotating, and revoking secrets.
+- **KMS (Key Management Service)**: Managed service or module that protects cryptographic keys and performs key operations.
+- **Envelope Encryption**: Pattern where data is encrypted with a data key, and that data key is encrypted by a higher-level KMS key.
+- **Workload Identity**: Cloud, cluster, or platform identity assigned to a running service so it can access resources without static credentials.
+- **Dynamic Secret**: Short-lived credential generated on demand for a specific workload, role, and time window.
+- **Static Secret**: Long-lived credential that exists until rotated or revoked.
+- **Rotation**: Replacing a secret with a new value and moving consumers safely to the new value.
+- **Revocation**: Invalidating a secret so it can no longer be used.
+- **Break-Glass Access**: Emergency human access path used when normal automated access is unavailable; it must be time-bound, approved, and audited.
+- **Secret Scanning**: Automated detection of likely secrets in source code, commits, pull requests, CI logs, or artifacts.
+- **Push Protection**: Pre-receive or hosted-source-control control that blocks commits containing detected secrets before they enter repository history.
 
 ## Architectural Decisions Log
 
@@ -37,6 +49,7 @@
 - **AGENTS-backend Code Quality & Documentation**: Mandatory 7th pillar adding SOLID, pragmatic DRY, YAGNI/KISS simplicity, guard clauses (early exits), intent-based comments (why not what), and docstring/contract synchronization.
 - **AGENTS-backend Generalization Updates (post-review)**: Backend template now supports machine-checkable contracts beyond REST/gRPC (`OpenAPI 3.1`, `Protobuf`, `GraphQL`, `AsyncAPI`, or equivalent), clarifies auth as credential/session verification rather than purely stateless JWT, scopes BOLA rules to protected user/tenant data with documented public/system exceptions, treats `READ COMMITTED` as relational-specific with non-relational consistency equivalents, prefers OpenTelemetry-compatible telemetry without banning vendor agents, and treats testing ratios as targets rather than quotas.
 - **Auth & Session Standard Scope**: Browser-facing apps prefer secure server-backed sessions or opaque tokens in `HttpOnly`, `Secure`, `SameSite=Lax/Strict` cookies; JWT is optional; authorization is centralized, deny-by-default, and object-scoped; cookie-authenticated mutations require CSRF protection beyond `SameSite`; admin/high-risk accounts require MFA and sensitive operations require step-up or reauthentication.
+- **Secrets Management Standard Scope**: Production secrets live in managed secret stores or approved encrypted GitOps mechanisms, are injected only at runtime, are accessed through least-privilege workload identities, have owner/purpose/rotation/revocation metadata, and are never displayed, committed, logged, or copied by AI agents.
 - **AGENTS-frontend Scope**: Universal production baseline for frontend web applications. Framework/meta-framework-specific rules (e.g., Next.js RSC, App Router) are handled inside project-level AGENTS.md files — no framework-specific template files are maintained in this repo.
 - **AGENTS-frontend Pillars**: 7 core pillars: (1) Component Architecture & Layering, (2) State Management & Data Fetching, (3) Web Performance & Core Web Vitals, (4) Security & Auth Baseline, (5) Accessibility (a11y) & UX Invariants, (6) Testing Strategy & QA, (7) Code Quality, CSS Maintainability & Design Tokens.
 - **AGENTS-frontend Pillar 1 (Component Architecture)**: Strict pure presentation vs container/hook logic separation, immutable typed props contracts (`type`/`interface`), ~150-line / max 3 state limit per component, and named exports baseline.
