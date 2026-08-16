@@ -135,11 +135,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Fetch Base Branch for Contract Diff
+        run: git fetch --depth=1 origin ${{ github.base_ref }}
       - name: Validate OpenAPI Breaking Changes
         uses: oasdiff/oasdiff-action/breaking@v0
         with:
           base: 'origin/${{ github.base_ref }}:api/openapi.yaml'
-          revision: 'api/openapi.yaml'
+          revision: 'HEAD:api/openapi.yaml'
           fail-on: ERR
       - name: Static Security & Vulnerability Audit
         run: |
@@ -151,8 +153,13 @@ Services processing complex input schemas, codecs, state machines, or cryptograp
 
 #### Code Coverage Gates
 - **Line & Branch Coverage**: Enforce a minimum threshold of **80% line and branch coverage** on core business services (`services/`, `domain/`).
+- **Exclusion Rules**: Auto-generated code (`*.pb.go`, OpenAPI clients, DB migration scripts, wire mocks) MUST be explicitly excluded from coverage calculations via configuration (`.coveragerc`, `vitest.config.ts`, `go test -coverpkg`).
 - **Focus Coverage**: Require 100% coverage on security-critical authorization middlewares and tenant isolation logic.
 - **CI Blocking**: Coverage checks MUST run as required PR checks and block merging if thresholds drop.
+
+#### Flaky Test Management & Quarantine Gates
+- **Retry Bounds**: Retries in CI pipelines MUST be capped at a maximum of 1 retry to detect intermittent container or timing issues without masking persistent failures.
+- **Quarantine Policy**: Tests exhibiting non-deterministic behavior MUST be immediately quarantined into a dedicated quarantine suite (`@flaky` / `quarantine` tag) and assigned an issue ticket. Blanket `continue-on-error: true` overrides on test steps are strictly forbidden.
 
 ---
 
@@ -206,7 +213,7 @@ func TestOrderHandler_GetOrder_NegativeAuth(t *testing.T) {
 		postgres.WithPassword("testpass"),
 	)
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = pgContainer.Terminate(ctx) })
+	t.Cleanup(func() { assert.NoError(t, pgContainer.Terminate(ctx)) })
 
 	// 2. Setup database connection & migrate schema
 	dbConnStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
@@ -257,15 +264,15 @@ import { createApp } from '../src/app';
 
 interface Order {
   id: string;
-  tenantId: string;
-  amountCents: number;
+  tenant_id: string;
+  amount_cents: number;
 }
 
 // 1. Define Test Data Factory using Fishery
 const orderFactory = Factory.define<Order>(({ sequence }) => ({
   id: `ord_${sequence}`,
-  tenantId: 'tenant_default',
-  amountCents: 4999,
+  tenant_id: 'tenant_default',
+  amount_cents: 4999,
 }));
 
 // 2. Wire-level HTTP Mocking for downstream payment gateway using MSW
@@ -297,7 +304,7 @@ describe('Orders API Authorization Security', () => {
 
   it('enforces negative authorization (BOLA) when tenant B accesses tenant A resource', async () => {
     // Seed resource owned by Tenant A
-    const orderA = orderFactory.build({ tenantId: 'tenant_A' });
+    const orderA = orderFactory.build({ tenant_id: 'tenant_A' });
     await app.db('orders').insert(orderA);
 
     // Act: Authenticated user from Tenant B requests Tenant A's order
@@ -364,7 +371,7 @@ async def db_engine(postgres_container):
     yield engine
     await engine.dispose()
 
-@pytest_asyncio.fixture
+@pytest_asyncio.fixture(loop_scope="session")
 async def async_client(db_engine) -> AsyncGenerator[AsyncClient, None]:
     async_session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
@@ -378,9 +385,13 @@ async def async_client(db_engine) -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as client:
         yield client
 
+@pytest_asyncio.fixture(autouse=True, loop_scope="session")
+async def reset_dependency_overrides():
+    """Ensure clean dependency overrides per test execution."""
+    yield
     app.dependency_overrides.clear()
 
-@pytest_asyncio.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True, loop_scope="session")
 async def cleanup_database(db_engine):
     """Guarantee zero shared state by truncating tables after each test run."""
     yield
@@ -388,7 +399,7 @@ async def cleanup_database(db_engine):
     async with db_engine.begin() as conn:
         await conn.execute(text("TRUNCATE TABLE orders CASCADE;"))
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="session")
 async def test_negative_authorization_bola_returns_403(async_client: AsyncClient):
     """
     Assert BOLA security control: User B (Tenant B) CANNOT fetch Order created by Tenant A.
@@ -451,6 +462,7 @@ async def test_negative_authorization_bola_returns_403(async_client: AsyncClient
 - [Vitest Testing Framework Documentation](https://vitest.dev/): Next-generation Vite-native unit and integration test framework for Node.js and TypeScript.
 - [pytest-asyncio Documentation](https://pytest-asyncio.readthedocs.io/): Official Pytest plugin for executing asynchronous test coroutines and async fixtures.
 - [Supertest HTTP Assertion Library](https://github.com/ladjs/supertest): High-level abstraction for testing HTTP endpoints in Node.js applications.
+- [HTTPX — Async HTTP Client for Python](https://www.httpx.org/): Fully featured async HTTP client for Python supporting ASGI app transport testing.
 - [Hypothesis — Property-Based Testing for Python](https://hypothesis.readthedocs.io/): Powerful library for property-based test generation in Python.
 - [fast-check — Property-Based Testing for JavaScript & TypeScript](https://fast-check.dev/): Property-based testing framework for JS/TS environments.
 - [golangci-lint Documentation](https://golangci-lint.run/): Fast Go linters runner for static code analysis.
@@ -458,6 +470,8 @@ async def test_negative_authorization_bola_returns_403(async_client: AsyncClient
 - [ESLint Documentation](https://eslint.org/): Pluggable JavaScript and TypeScript static code analysis tool.
 - [Mypy Static Type Checker](https://mypy.readthedocs.io/): Static type checking tool for Python applications.
 - [TypeScript Compiler CLI Reference](https://www.typescriptlang.org/docs/handbook/compiler-options.html): Official CLI flags (`tsc --noEmit`) for static type verification.
+- [NIST SP 800-115 — Technical Guide to Information Security Testing and Assessment](https://csrc.nist.gov/pubs/sp/800/115/final): Primary NIST guide for technical security testing, penetration testing, and vulnerability assessments.
+- [Pact Specification v4 — Consumer-Driven Contract Testing](https://docs.pact.io/5-minute-getting-started-guide): Specification standard for consumer-driven contract testing across distributed microservices.
 - [Go Vulncheck Documentation](https://go.dev/doc/tutorial/govulncheck): Official Go vulnerability detection tool for dependencies.
 - [pip-audit Vulnerability Scanner](https://pypi.org/project/pip-audit/): CLI tool for scanning Python environments and requirements for known vulnerabilities.
 - [npm-audit CLI Reference](https://docs.npmjs.com/cli/v10/commands/npm-audit): Package vulnerability scanner for Node.js projects.
