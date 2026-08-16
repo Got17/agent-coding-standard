@@ -1,40 +1,27 @@
 # Go REST Hexagonal Backend Standard
 
-> Copy this block into a Go REST API project's `AGENTS.md` when the service uses hexagonal architecture.
-
-<!-- AI-COPY-BLOCK
-NON-NEGOTIABLE GO BACKEND RULES (enforce every PR):
-1. Architecture: Use hexagonal architecture for REST APIs. Keep `cmd/<service>/main.go` as the composition root only. Keep business rules in `internal/domain` and application use cases in `internal/app`. HTTP, SQL, queues, caches, and third-party SDKs are adapters outside the core.
-2. Dependency direction: Domain and application packages MUST NOT import HTTP routers, database drivers, ORM/query libraries, Redis clients, message brokers, cloud SDKs, or logging/telemetry vendors. Adapters depend inward on ports; the core never depends outward on adapters.
-3. Ports: Define small interfaces in the package that consumes them, usually `internal/app/<usecase>`. Return concrete types from adapter constructors. Do not create `ports`, `interfaces`, `common`, or `utils` packages as dumping grounds.
-4. REST handlers: Handlers decode, strictly validate, authenticate/authorize, invoke one use case, and encode responses. Use standard Go 1.22+ `net/http` (`http.NewServeMux`) or `chi` for HTTP adapters. Handlers MUST NOT contain business decisions, SQL, transaction choreography, or infrastructure retry logic.
-5. Context and cancellation: Pass `context.Context` as the first parameter on all request-scoped use cases, repositories, clients, and transactions. Never store context in structs. Derive bounded timeouts (`context.WithTimeout`) for outbound network and database calls.
-6. Errors: Always check errors. Wrap with useful operation context using `%w`; expose typed/domain sentinel errors from the core; translate them to the standard backend 5-key API error envelope (`code`, `message`, `details`, `timestamp`, `request_id`) at the HTTP adapter boundary (see `docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics`).
-7. Data access: Use parameterized SQL or query-builder parameters only. Keep `database/sql` or driver details inside repository adapters. Relational DB transactions MUST default to `READ COMMITTED` isolation (`sql.TxOptions{Isolation: sql.LevelReadCommitted}`). Every persistent entity MUST include the 4 audit metadata fields (`created_at`, `updated_at`, `created_by`, `updated_by`). Never call non-transaction `DB` methods inside a transaction workflow.
-8. Security: Scope every protected query by authenticated user/tenant from server-side auth context. Reject undeclared request fields. Use explicit write DTOs; never bind request bodies directly into persistence models.
-9. Observability: Use standard library `log/slog` with `slog.NewJSONHandler` for structured JSON logs, OpenTelemetry-compatible traces/metrics, and W3C `traceparent`/`tracestate` propagation. Do not use `fmt.Println` or ad hoc text logs in production paths.
-10. Runtime: Configure HTTP server read/write/idle timeouts, database pool bounds, dual health probes (`/healthz/liveness` zero-I/O process check, `/healthz/readiness` dependency check returning 530/503 on failure), and graceful `http.Server.Shutdown` on SIGTERM/SIGINT.
-11. Testing: Unit-test domain and use cases with in-memory/fake adapters. Integration-test real repositories and HTTP adapters with ephemeral databases. Add fuzz tests for parsers, validators, and request decoding edge cases.
-12. Tooling: Every CI run MUST execute `gofmt`/`goimports`, `go test ./...`, `go test -race ./...` for supported packages, and `govulncheck ./...`.
--->
-
-<!-- START AGENT-STANDARD: BACKEND-GO -->
-
+> **AI Copy Block (`AGENTS.md`)**
+```markdown
+<!-- AI-COPY-BLOCK -->
+<!-- START AGENT-STANDARD: BACKEND-GO-HEXAGONAL -->
 ## Go REST Hexagonal Architecture Rules
-- [ ] `cmd/<service>/main.go` is the only composition root. It loads config, creates adapters, injects dependencies, starts the HTTP server, and owns shutdown.
-- [ ] Core packages (`internal/domain`, `internal/app`) are framework-agnostic and infrastructure-free.
-- [ ] HTTP handlers, SQL repositories, external API clients, cache clients, message publishers, and telemetry exporters are adapters.
-- [ ] Interfaces are defined by the consumer package, not by the implementation package.
-- [ ] Handler methods contain no business decisions and no database queries.
-- [ ] Every request-scoped public method accepts `context.Context` first.
-- [ ] All SQL is parameterized. Relational DB transactions explicitly set `READ COMMITTED` isolation. Entities include 4 audit fields (`created_at`, `updated_at`, `created_by`, `updated_by`).
-- [ ] Domain/application errors are translated to the backend standard 5-key API error envelope (`code`, `message`, `details`, `timestamp`, `request_id`) at transport adapters.
-- [ ] Production services expose liveness/readiness probes, structured `log/slog` JSON logs, OpenTelemetry traces/metrics, and graceful shutdown.
-- [ ] CI runs formatting, tests, race detection where supported, and vulnerability checks (`govulncheck`).
-
-<!-- END AGENT-STANDARD: BACKEND-GO -->
+- Use hexagonal architecture for REST APIs. Keep `cmd/<service>/main.go` as the composition root only. Keep business rules in `internal/domain` and application use cases in `internal/app`. HTTP, SQL, queues, caches, and third-party SDKs are adapters outside the core.
+- Domain and application packages MUST NOT import HTTP routers, database drivers, ORM/query libraries, Redis clients, message brokers, cloud SDKs, or logging/telemetry vendors. Adapters depend inward on ports; the core never depends outward on adapters.
+- Define small interfaces in the package that consumes them, usually `internal/app/<usecase>`. Return concrete types from adapter constructors. Do not create `ports`, `interfaces`, `common`, or `utils` packages as dumping grounds.
+- REST handlers decode, strictly validate, authenticate/authorize, invoke one use case, and encode responses. Use standard Go 1.22+ `net/http` (`http.NewServeMux`) or `chi` for HTTP adapters. Handlers MUST NOT contain business decisions, SQL, transaction choreography, or infrastructure retry logic.
+- Pass `context.Context` as the first parameter on all request-scoped use cases, repositories, clients, and transactions. Never store context in structs. Derive bounded timeouts (`context.WithTimeout`) for outbound network and database calls.
+- Always check errors. Wrap with useful operation context using `%w`; expose typed/domain sentinel errors from the core; translate them to the standard backend 5-key API error envelope (`code`, `message`, `details`, `timestamp`, `request_id`) at transport adapters (see `docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics`).
+- Use parameterized SQL or query-builder parameters only. Keep `database/sql` or driver details inside repository adapters. Relational DB transactions MUST default to `READ COMMITTED` isolation (`sql.TxOptions{Isolation: sql.LevelReadCommitted}`). Every persistent entity MUST include the 4 audit metadata fields (`created_at`, `updated_at`, `created_by`, `updated_by`). Never call non-transaction `DB` methods inside a transaction workflow.
+- Scope every protected query by authenticated user/tenant from server-side auth context. Reject undeclared request fields. Use explicit write DTOs; never bind request bodies directly into persistence models.
+- Use standard library `log/slog` with `slog.NewJSONHandler` for structured JSON logs, OpenTelemetry-compatible traces/metrics, and W3C `traceparent`/`tracestate` propagation. Do not use `fmt.Println` or ad hoc text logs in production paths.
+- Configure HTTP server read/write/idle timeouts, database pool bounds, dual health probes (`/healthz/liveness` zero-I/O process check, `/healthz/readiness` dependency check returning 530/503 on failure), and graceful `http.Server.Shutdown` on SIGTERM/SIGINT.
+- Unit-test domain and use cases with in-memory/fake adapters in co-located `*_test.go` files. Integration-test real repositories and HTTP adapters with ephemeral databases using `internal/testsupport`. Add fuzz tests for parsers, validators, and request decoding edge cases.
+- Every CI run MUST execute `gofmt`/`goimports`, `go test ./...`, `go test -race ./...` for supported packages, and `govulncheck ./...`.
+<!-- END AGENT-STANDARD: BACKEND-GO-HEXAGONAL -->
+```
 
 ---
+
 
 ## Detailed Human Guide & Rationale
 
