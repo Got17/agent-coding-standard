@@ -24,10 +24,13 @@ export default defineConfig({
         {
           text: 'General Standards',
           items: [
+            { text: 'Overview & Index', link: '/general/' },
             { text: 'Architecture Patterns', link: '/general/architecture-patterns' },
             { text: 'Clean Code Principles', link: '/general/clean-code' },
             { text: 'Git Workflow & Versioning', link: '/general/git-workflow' },
-            { text: 'Code Review Checklist', link: '/general/code-review-checklist' }
+            { text: 'Code Review Checklist', link: '/general/code-review-checklist' },
+            { text: 'AI Agent Collaboration', link: '/general/ai-agent-collaboration' },
+            { text: 'Documentation & ADRs', link: '/general/documentation-adr' }
           ]
         }
       ],
@@ -88,8 +91,12 @@ export default defineConfig({
         {
           text: 'Security Standards',
           items: [
+            { text: 'Overview & Index', link: '/security/' },
             { text: 'OWASP Top 10 Protections', link: '/security/owasp-top-10' },
-            { text: 'Secrets Management & Keys', link: '/security/secrets-management' }
+            { text: 'Secrets Management & Keys', link: '/security/secrets-management' },
+            { text: 'Supply-Chain Security & SBOMs', link: '/security/supply-chain' },
+            { text: 'Threat Modeling & STRIDE', link: '/security/threat-modeling' },
+            { text: 'Vulnerability SLAs & Incident Response', link: '/security/vulnerability-incident-response' }
           ]
         }
       ],
