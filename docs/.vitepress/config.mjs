@@ -72,11 +72,15 @@ export default defineConfig({
         {
           text: 'DevOps & Infrastructure',
           items: [
+            { text: 'Overview & Index', link: '/devops/' },
             { text: 'Docker & Container Security', link: '/devops/docker-container' },
             { text: 'Kubernetes & Helm Standards', link: '/devops/kubernetes-helm' },
             { text: 'CI/CD Pipeline Architecture', link: '/devops/ci-cd-pipelines' },
             { text: 'Infrastructure as Code (Terraform)', link: '/devops/iac-terraform' },
-            { text: 'Monitoring & Alerting', link: '/devops/monitoring-alerting' }
+            { text: 'Monitoring & Alerting', link: '/devops/monitoring-alerting' },
+            { text: 'Secrets & Zero-Trust Access', link: '/devops/secrets-zerotrust' },
+            { text: 'Resilience & Disaster Recovery', link: '/devops/disaster-recovery' },
+            { text: 'Scripting & Automation', link: '/devops/scripting-automation' }
           ]
         }
       ],
