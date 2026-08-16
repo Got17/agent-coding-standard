@@ -12,3 +12,4 @@
 - **[Auth & Session Management](/backend/auth-session)**: Secure browser sessions, optional JWT/opaque tokens, CSRF protection, MFA, and deny-by-default authorization.
 - **[Resilience & Caching](/backend/resilience-caching)**: Redis caching strategies, circuit breakers, rate limiting.
 - **[Structured Logging & Telemetry](/backend/logging-observability)**: JSON log formats, correlation IDs, OpenTelemetry integration.
+- **[Testing & Quality Gates](/backend/testing-quality-gates)**: Testing pyramid, Testcontainers, negative auth checks, and CI contract diff gates.

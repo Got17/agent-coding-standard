@@ -234,7 +234,7 @@ Minimum Persistence Invariants:
 
 Go code must check and handle errors explicitly. Use `%w` wrapping to preserve error causes without exposing internal infrastructure details to clients. See [Effective Go: Errors](https://go.dev/doc/effective_go#errors) and [Go Code Review Comments: Handle Errors](https://go.dev/wiki/CodeReviewComments#handle-errors).
 
-At the transport adapter boundary, map domain errors to the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [`docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics`](file:///D:/Coding/projects/agent-coding-standard/docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics).
+At the transport adapter boundary, map domain errors to the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [API Design Standard](./api-design.md#4-standard-5-key-error-envelope--diagnostics).
 
 ```go
 func mapDomainErrorToHTTP(w http.ResponseWriter, r *http.Request, err error) {

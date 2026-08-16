@@ -216,7 +216,7 @@ export function getLogContext(): Record<string, string> {
 
 ### 5. Domain Exception Hierarchy & 5-Key API Error Envelope
 
-Custom application errors MUST extend native JavaScript `Error` and map to the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [`docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics`](file:///D:/Coding/projects/agent-coding-standard/docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics).
+Custom application errors MUST extend native JavaScript `Error` and map to the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [API Design Standard](./api-design.md#4-standard-5-key-error-envelope--diagnostics).
 
 ```typescript
 // Custom Application Error Base Class

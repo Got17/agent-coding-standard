@@ -8,9 +8,9 @@
 - Schema mutations MUST use versioned, deterministic migration scripts checked into version control. Never apply manual schema modifications in production ("ClickOps DB"). CI pipelines MUST run migration linting and schema drift validation.
 - Enforce the Expand-Migrate-Contract pattern for non-breaking, zero-downtime schema changes (adding new columns as nullable/defaulted before dropping old columns in a subsequent release).
 - All queries MUST use parameterized inputs or ORM query builders. Raw string concatenation of untrusted input in SQL statements is strictly banned to prevent SQL Injection (SQLi) (OWASP A03:2021).
-- Every foreign key column MUST have an explicit database index and explicit `ON DELETE` behavior (`ON DELETE RESTRICT` by default; `ON DELETE CASCADE` only for parent-owned dependent entities).
+- Every foreign key column MUST have an explicit database index (PostgreSQL does NOT automatically index foreign keys). Declare explicit `ON DELETE` rules (`ON DELETE RESTRICT` by default; `ON DELETE CASCADE` only for parent-owned dependent entities). Note: Soft deletes (`UPDATE`) bypass SQL `ON DELETE` triggers and require explicit transactional application logic.
 - Prevent N+1 query antipatterns by using explicit eager loading (`JOIN`, `include`, `preload`) or batching primitives (`DataLoader`).
-- Configure explicit connection pool limits (`min`/`max`), server-side statement timeouts (`statement_timeout`), lock timeouts (`lock_timeout`), and idle transaction timeouts (`idle_in_transaction_session_timeout`) to prevent connection starvation and lock contention.
+- Configure explicit connection pool limits (`min`/`max`) and enforce persistent role-level database timeouts: server-side statement timeouts (`statement_timeout`), lock timeouts (`lock_timeout`), and idle transaction timeouts (`idle_in_transaction_session_timeout`) to prevent connection starvation and lock contention.
 - Keep database transactions short and tightly scoped. External network I/O calls (HTTP requests, gRPC, third-party API calls, email dispatches) are strictly forbidden inside database transactions.
 - Relational databases MUST default to `READ COMMITTED` or higher transaction isolation. High-concurrency state mutations MUST use explicit Optimistic Concurrency Control (`version` integer column) or Pessimistic Locking (`SELECT ... FOR UPDATE` with `lock_timeout`).
 - Every application table MUST include 4-key audit metadata: `created_at` (timestamptz), `updated_at` (timestamptz), `created_by` (uuid/string), and `updated_by` (uuid/string).
@@ -30,7 +30,7 @@ Production schema changes must be versioned, immutable, and checked into source 
 Automated CI pipelines MUST validate database migrations before code deployment:
 1. **Checksum Verification**: Ensure applied migration files have not been modified post-commit.
 2. **Backward-Compatibility Linting**: Verify migrations do not include destructive commands (e.g. `DROP COLUMN` or `ALTER TABLE ... RENAME`) in a single release.
-3. **Dry-Run Validation**: Run migrations against a clean ephemeral database instance in CI.
+3. **Dry-Run Validation**: Run migrations against a clean ephemeral database instance in CI to verify schema parity.
 
 #### The Expand-Migrate-Contract Pattern
 To achieve zero-downtime deployments, database migrations and application code deployments must be decoupled so that old and new application instances can safely run concurrently against the database engine.
@@ -73,12 +73,18 @@ Database connection creation involves expensive TCP handshakes, TLS negotiation,
 
 #### Connection Limits & Timeouts
 - **Pool Sizing**: Capacity must be bounded per application instance (`min: 2, max: 10`). Total connection pool capacity across all application replicas MUST NOT exceed the database engine's `max_connections` limit.
-- **Statement Timeout (`statement_timeout`)**: Configure a global server-side statement timeout (e.g. `5000ms`) to abort runaway OLTP queries automatically.
-- **Lock Timeout (`lock_timeout`)**: Configure a lock acquisition timeout (e.g. `2000ms`) to prevent transactions from waiting indefinitely for row or table locks.
-- **Idle Transaction Timeout (`idle_in_transaction_session_timeout`)**: Configure a session timeout (e.g. `10000ms`) to terminate connections left idle inside open transactions.
+- **Persistent Role-Level Timeouts**: Configure timeouts at the database role/user level so every pooled connection inherits safety limits globally:
+  - **Statement Timeout (`statement_timeout`)**: Global server-side statement timeout (e.g. `5000ms`) to abort runaway OLTP queries automatically.
+  - **Lock Timeout (`lock_timeout`)**: Lock acquisition timeout (e.g. `2000ms`) to prevent transactions from waiting indefinitely for row or table locks.
+  - **Idle Transaction Timeout (`idle_in_transaction_session_timeout`)**: Session timeout (e.g. `10000ms`) to terminate connections left idle inside open transactions.
 
 ```sql
--- PostgreSQL session timeout configuration example
+-- PostgreSQL persistent role-level configuration example (Recommended)
+ALTER ROLE app_user SET statement_timeout = '5s';
+ALTER ROLE app_user SET lock_timeout = '2s';
+ALTER ROLE app_user SET idle_in_transaction_session_timeout = '10s';
+
+-- Per-session fallback configuration
 SET statement_timeout = '5s';
 SET lock_timeout = '2s';
 SET idle_in_transaction_session_timeout = '10s';
@@ -124,7 +130,8 @@ COMMIT;
 Unindexed queries and N+1 query patterns are the primary causes of database performance degradation as data volume grows.
 
 #### Foreign Key Indexing & Explicit `ON DELETE` Policy
-Every foreign key column (`tenant_id`, `user_id`, `organization_id`) MUST have an explicit database index to support fast joins and avoid full table scans.
+Every foreign key column (`tenant_id`, `user_id`, `organization_id`) MUST have an explicit database index.
+> 💡 **Engine Note (PostgreSQL)**: Unlike MySQL InnoDB, PostgreSQL does **NOT** automatically index foreign key columns. Omitting explicit indexes on foreign keys causes full table sequential scans and table-level lock escalation whenever parent rows are deleted or updated.
 
 Explicit `ON DELETE` rules MUST be declared on every foreign key constraint:
 - **`ON DELETE RESTRICT`** (Default): Prevents deletion of a parent record if child records exist. Use for primary business entities and financial records.
@@ -150,7 +157,7 @@ users = User.query.options(joinedload(User.orders)).all()
 
 ### 6. Mandatory Audit Metadata
 
-Every persistent entity table in application databases must contain 4 standardized audit metadata columns for operational traceability and compliance:
+Every persistent entity table in application databases must contain 4 standardized audit metadata columns for operational traceability and compliance (NIST SP 800-92):
 
 | Column Name | Data Type | Constraint | Description |
 |---|---|---|---|
@@ -164,6 +171,10 @@ Every persistent entity table in application databases must contain 4 standardiz
 ### 7. Soft Delete & Data Archiving Strategy
 
 When domain requirements mandate soft deletion (retaining records for audit compliance without displaying them to end users), implementations must prevent unique key collisions and query performance degradation.
+
+#### Soft Delete vs. Foreign Key `ON DELETE` Triggers
+> ⚠️ **CRITICAL INVARIANT**: SQL foreign key `ON DELETE` constraints (`RESTRICT`, `CASCADE`) **DO NOT EXECUTE** during soft deletes because a soft delete is a SQL `UPDATE` statement (`SET deleted_at = NOW()`), not a SQL `DELETE`.
+> Cascading soft deletes MUST be executed explicitly inside an application service transaction or handled via database `BEFORE UPDATE` triggers to avoid leaving active child rows linked to soft-deleted parent entities.
 
 #### Partial Unique Indexes for Soft Deletes
 Standard unique constraints (`UNIQUE(email)`) break soft deletes: a user cannot re-register an email if a previously soft-deleted row contains that email. Solved using **partial unique indexes**:
@@ -191,6 +202,10 @@ CREATE UNIQUE INDEX idx_users_email_active ON users (email) WHERE deleted_at IS 
 - [PostgreSQL Documentation — Transaction Isolation](https://www.postgresql.org/docs/current/transaction-iso.html): Official PostgreSQL guide on `READ COMMITTED`, `REPEATABLE READ`, and `SERIALIZABLE` isolation levels.
 - [PostgreSQL Documentation — Statement & Lock Timeouts](https://www.postgresql.org/docs/current/runtime-config-client.html): Official specs for `statement_timeout`, `lock_timeout`, and `idle_in_transaction_session_timeout`.
 - [PostgreSQL Documentation — Explicit Locking (`FOR UPDATE`)](https://www.postgresql.org/docs/current/explicit-locking.html): Official spec for pessimistic row-level locking (`SELECT ... FOR UPDATE`).
+- [PostgreSQL Documentation — Foreign Keys & Indexing](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK): Official PostgreSQL documentation detailing foreign key behavior and explicit indexing requirements.
+- [H. T. Kung & John T. Robinson (1981) — On Optimistic Methods for Concurrency Control](https://dl.acm.org/doi/10.1145/319566.319567): Seminal ACM TODS paper introducing Optimistic Concurrency Control (OCC).
+- [GraphQL / Facebook DataLoader Specification](https://github.com/graphql/dataloader): Reference implementation and batching pattern specification for resolving N+1 queries.
+- [NIST SP 800-92 — Guide to Computer Security Log Management](https://csrc.nist.gov/publications/detail/sp/800-92/final): Standard governing audit log metadata requirements (timestamps and user identity attribution).
 - [Martin Fowler — Evolutionary Database Design & Parallel Change](https://martinfowler.com/articles/evodb.html): Authoritative guide for non-breaking, zero-downtime database migrations (Expand-Migrate-Contract pattern).
 - [OWASP Top 10 2021 — A03: Injection](https://owasp.org/Top10/A03_2021-Injection/): OWASP standard for parameterized queries and SQL injection prevention.
 - [ANSI/ISO/IEC 9075 SQL Standard — Referential Integrity](https://www.iso.org/standard/63555.html): Standard spec for Foreign Key constraints and `ON DELETE` cascade/restrict rules.

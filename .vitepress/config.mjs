@@ -13,7 +13,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'General', link: '/general/architecture-patterns' },
-      { text: 'Frontend', link: '/frontend/react-nextjs' },
+      { text: 'Frontend', link: '/frontend/' },
       { text: 'Backend', link: '/backend/' },
       { text: 'DevOps', link: '/devops/docker-container' },
       { text: 'Security', link: '/security/owasp-top-10' },
@@ -36,11 +36,17 @@ export default defineConfig({
         {
           text: 'Frontend Production Standards',
           items: [
+            { text: 'Overview & Index', link: '/frontend/' },
             { text: 'React & Next.js Standard', link: '/frontend/react-nextjs' },
+            { text: 'Next.js Frontend Structure', link: '/frontend/nextjs-frontend-structure' },
             { text: 'State Management', link: '/frontend/state-management' },
             { text: 'Styling & UI Architecture', link: '/frontend/css-ui' },
             { text: 'Web Performance & Vitals', link: '/frontend/web-performance' },
-            { text: 'Security & Accessibility (a11y)', link: '/frontend/security-a11y' }
+            { text: 'Frontend Security', link: '/frontend/security' },
+            { text: 'Accessibility (a11y)', link: '/frontend/accessibility' },
+            { text: 'Forms & Validation', link: '/frontend/forms-validation' },
+            { text: 'Testing & QA', link: '/frontend/testing-qa' },
+            { text: 'Internationalization (i18n)', link: '/frontend/i18n-localization' }
           ]
         }
       ],
@@ -48,14 +54,16 @@ export default defineConfig({
         {
           text: 'Backend Production Standards',
           items: [
+            { text: 'Overview & Index', link: '/backend/' },
             { text: 'API Design (REST/gRPC/GraphQL)', link: '/backend/api-design' },
             { text: 'Node.js & TypeScript Standard', link: '/backend/nodejs-typescript' },
             { text: 'Python & FastAPI Standard', link: '/backend/python-fastapi' },
-            { text: 'Go Backend Standard', link: '/backend/go' },
+            { text: 'Go REST Hexagonal Standard', link: '/backend/go-rest-hexagonal' },
             { text: 'Database & Migrations', link: '/backend/database-orm' },
             { text: 'Auth & Session Management', link: '/backend/auth-session' },
             { text: 'Resilience & Caching', link: '/backend/resilience-caching' },
-            { text: 'Structured Logging & Telemetry', link: '/backend/logging-observability' }
+            { text: 'Structured Logging & Telemetry', link: '/backend/logging-observability' },
+            { text: 'Testing & Quality Gates', link: '/backend/testing-quality-gates' }
           ]
         }
       ],

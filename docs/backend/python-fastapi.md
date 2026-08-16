@@ -185,7 +185,7 @@ class ContextPropagationMiddleware(BaseHTTPMiddleware):
 
 ### 6. Standard 5-Key API Error Envelope & Exception Handling
 
-All application exceptions (`HTTPException`, `RequestValidationError`, custom exceptions) MUST be formatted into the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [`docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics`](file:///D:/Coding/projects/agent-coding-standard/docs/backend/api-design.md#4-standard-5-key-error-envelope--diagnostics).
+All application exceptions (`HTTPException`, `RequestValidationError`, custom exceptions) MUST be formatted into the standard flat **5-key API error envelope** (`code`, `message`, `details`, `timestamp`, `request_id`). See [API Design Standard](./api-design.md#4-standard-5-key-error-envelope--diagnostics).
 
 ```python
 # app/core/exceptions.py
