@@ -7,3 +7,18 @@
 .VPNavBarTitle .title span {
   white-space: normal !important;
 }
+
+/* Hide scrollbar for sidebar while maintaining scrollability */
+.VPSidebar,
+.VPSidebarNav,
+.VPSidebar .nav {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.VPSidebar::-webkit-scrollbar,
+.VPSidebarNav::-webkit-scrollbar,
+.VPSidebar .nav::-webkit-scrollbar {
+  display: none !important;
+}
+

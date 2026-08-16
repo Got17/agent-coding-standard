@@ -53,6 +53,7 @@ export default defineConfig({
         {
           text: 'Backend Production Standards',
           items: [
+            { text: 'Overview & Index', link: '/backend/' },
             { text: 'API Design (REST/gRPC/GraphQL)', link: '/backend/api-design' },
             { text: 'Node.js & TypeScript Standard', link: '/backend/nodejs-typescript' },
             { text: 'Python & FastAPI Standard', link: '/backend/python-fastapi' },
@@ -61,7 +62,9 @@ export default defineConfig({
             { text: 'Auth & Session Management', link: '/backend/auth-session' },
             { text: 'Resilience & Caching', link: '/backend/resilience-caching' },
             { text: 'Structured Logging & Telemetry', link: '/backend/logging-observability' },
-            { text: 'Testing & Quality Gates', link: '/backend/testing-quality-gates' }
+            { text: 'Testing & Quality Gates', link: '/backend/testing-quality-gates' },
+            { text: 'Background Jobs & Events', link: '/backend/async-jobs-events' },
+            { text: 'Performance & Capacity', link: '/backend/performance-capacity' }
           ]
         }
       ],

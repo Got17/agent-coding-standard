@@ -63,7 +63,9 @@ export default defineConfig({
             { text: 'Auth & Session Management', link: '/backend/auth-session' },
             { text: 'Resilience & Caching', link: '/backend/resilience-caching' },
             { text: 'Structured Logging & Telemetry', link: '/backend/logging-observability' },
-            { text: 'Testing & Quality Gates', link: '/backend/testing-quality-gates' }
+            { text: 'Testing & Quality Gates', link: '/backend/testing-quality-gates' },
+            { text: 'Background Jobs & Events', link: '/backend/async-jobs-events' },
+            { text: 'Performance & Capacity', link: '/backend/performance-capacity' }
           ]
         }
       ],

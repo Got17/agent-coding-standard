@@ -8,7 +8,7 @@
 - Enforce the Testing Pyramid ratio: high proportion (~70%) of fast, isolated unit tests for domain business logic; targeted (~20%) integration tests using Testcontainers or ephemeral databases for repositories and handlers; lightweight (~10%) E2E smoke tests for critical paths. Ratios represent target distributions, not rigid mechanical quotas.
 - Enforce deterministic test execution with zero shared mutable state across test runs. Use test data factories (FactoryBoy, Fishery, Gofakeit) over static SQL seed dumps. Execute database integration tests within isolated schemas, dedicated temporary databases, or truncated transactions.
 - Mandatory Negative Authorization Coverage: Every protected API resource and endpoint MUST include at least one negative authorization test asserting that a valid authenticated principal from a different user or tenant context receives `403 Forbidden` or `404 Not Found` — never resource data (BOLA/IDOR security verification). Negative authorization tests MUST run in CI pipelines.
-- Automated Contract Validation in CI: Automatically validate API spec diffs (OpenAPI, Protobuf, GraphQL, AsyncAPI) in CI pipelines using automated tooling (`oasdiff`, `buf breaking`, `graphql-schema-linter`). Block pull requests introducing unauthorized breaking changes or un-versioned schema updates.
+- Automated Contract Validation in CI: Automatically validate API spec diffs (OpenAPI, Protobuf, GraphQL, AsyncAPI) in CI pipelines using automated tooling (`oasdiff`, `buf breaking`, `graphql-schema-linter`, `asyncapi diff`). Block pull requests introducing unauthorized breaking changes or un-versioned schema updates.
 - Test Environment Parity & Mocking Boundaries: Mock ONLY at external system boundaries (third-party SaaS, payment gateways, external webhooks) using wire-level stubs (WireMock, MSW, httpmock). DO NOT mock internal database engines, ORM layers, caches, or message brokers in integration tests — use containerized dependencies (Testcontainers).
 - Automated CI Quality Gates: Enforce minimum code coverage thresholds (minimum 80% line and branch coverage on domain business logic) and block CI merges on test failures, static analysis errors, or breaking contract diffs.
 <!-- END AGENT-STANDARD: BACKEND-TESTING -->
@@ -120,6 +120,9 @@ In microservice architectures, un-coordinated breaking API changes between front
 3. **GraphQL Schema Linting**: Run `graphql-schema-linter` or `@graphql-inspector/ci` to flag breaking field removals or type changes in GraphQL schemas.
 4. **AsyncAPI Spec Diff**: For event-driven services, run `asyncapi diff BASE NEW` in CI pipelines to detect backward-incompatible message payload, channel, or binding changes.
 
+#### Static Analysis & Vulnerability Scanning Gates
+CI pipelines MUST run static analysis linters (`golangci-lint`, `ruff`, `eslint`), static type checkers (`mypy --strict`, `tsc --noEmit`), and dependency vulnerability scanners (`govulncheck`, `pip-audit`, `npm audit`) on every pull request. PR merges MUST be blocked if static analysis reports errors or un-triaged vulnerabilities above medium severity.
+
 ```yaml
 # Example CI Quality Gate Check (GitHub Actions Workflow snippet)
 name: Contract & Quality Gates
@@ -133,12 +136,18 @@ jobs:
         with:
           fetch-depth: 0
       - name: Validate OpenAPI Breaking Changes
-        uses: oasdiff/oasdiff-action/breaking@v1
+        uses: oasdiff/oasdiff-action/breaking@v0
         with:
-          base: 'origin/${{ github.base_ref }}:docs/openapi.json'
-          revision: 'docs/openapi.json'
+          base: 'origin/${{ github.base_ref }}:api/openapi.yaml'
+          revision: 'api/openapi.yaml'
           fail-on: ERR
+      - name: Static Security & Vulnerability Audit
+        run: |
+          npm audit --audit-level=high
 ```
+
+#### Property-Based Testing & Fuzzing Gates
+Services processing complex input schemas, codecs, state machines, or cryptographic calculations MUST include property-based tests (e.g. `fast-check` for TS, `Hypothesis` for Python) or native fuzzing (`go test -fuzz` for Go) in CI pipelines to discover unhandled edge-case inputs, panic conditions, and boundary violations automatically.
 
 #### Code Coverage Gates
 - **Line & Branch Coverage**: Enforce a minimum threshold of **80% line and branch coverage** on core business services (`services/`, `domain/`).
@@ -183,7 +192,6 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
@@ -221,13 +229,19 @@ func TestOrderHandler_GetOrder_NegativeAuth(t *testing.T) {
 	app.ServeHTTP(rec, req)
 
 	// 6. ASSERTION: Access MUST be forbidden (403 or 404) and match standard 5-key error envelope
-	assert.Equal(t, http.StatusForbidden, rec.Code, "Tenant B must not access Tenant A resource")
+	assert.Contains(t, []int{http.StatusForbidden, http.StatusNotFound}, rec.Code, "Tenant B must not access Tenant A resource")
 	var errResp map[string]interface{}
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &errResp))
-	assert.Equal(t, "PERMISSION_DENIED", errResp["code"])
-	assert.NotEmpty(t, errResp["request_id"])
+	if rec.Code == http.StatusForbidden {
+		assert.Equal(t, "PERMISSION_DENIED", errResp["code"])
+	} else {
+		assert.Equal(t, "NOT_FOUND", errResp["code"])
+	}
+	assert.NotEmpty(t, errResp["message"])
+	assert.NotNil(t, errResp["details"])
 	assert.NotEmpty(t, errResp["timestamp"])
-	assert.NotContains(t, rec.Body.String(), orderA.ID, "Response body must not leak resource data")
+	assert.NotEmpty(t, errResp["request_id"])
+	assert.NotContains(t, rec.Body.String(), "amount_cents", "Response body must not leak domain payload attributes")
 }
 ```
 
@@ -263,7 +277,7 @@ const mswServer = setupServer(
 
 describe('Orders API Authorization Security', () => {
   let container: StartedPostgreSqlContainer;
-  let app: any;
+  let app: Awaited<ReturnType<typeof createApp>>;
 
   beforeAll(async () => {
     mswServer.listen({ onUnhandledRequest: 'error' });
@@ -271,8 +285,9 @@ describe('Orders API Authorization Security', () => {
     app = await createApp({ connectionString: container.getConnectionUri() });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     mswServer.resetHandlers();
+    await app.db.raw('TRUNCATE TABLE orders CASCADE;');
   });
 
   afterAll(async () => {
@@ -290,11 +305,13 @@ describe('Orders API Authorization Security', () => {
       .get(`/api/v1/orders/${orderA.id}`)
       .set('Authorization', 'Bearer token_user_tenant_B');
 
-    // Assert: Must receive 403 Forbidden or 404 Not Found with standard 5-key error envelope
+    // Assert: Must receive 403 Forbidden (PERMISSION_DENIED) or 404 Not Found (NOT_FOUND) with standard 5-key error envelope
     expect([403, 404]).toContain(response.status);
-    expect(response.body.code).toBe('PERMISSION_DENIED');
-    expect(response.body.request_id).toBeDefined();
+    expect(response.body.code).toBe(response.status === 403 ? 'PERMISSION_DENIED' : 'NOT_FOUND');
+    expect(response.body.message).toBeDefined();
+    expect(response.body.details).toBeDefined();
     expect(response.body.timestamp).toBeDefined();
+    expect(response.body.request_id).toBeDefined();
     expect(response.body.amountCents).toBeUndefined();
   });
 
@@ -317,6 +334,7 @@ import pytest_asyncio
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from testcontainers.postgres import PostgresContainer
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 import factory
 from app.main import app
@@ -332,9 +350,8 @@ def postgres_container():
     with PostgresContainer("postgres:16-alpine") as postgres:
         yield postgres
 
-@pytest_asyncio.fixture
-async def async_client(postgres_container) -> AsyncGenerator[AsyncClient, None]:
-    # Construct async SQLAlchemy engine handling driver-prefixed connection URLs
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def db_engine(postgres_container):
     url = postgres_container.get_connection_url()
     db_url = (
         url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
@@ -342,12 +359,14 @@ async def async_client(postgres_container) -> AsyncGenerator[AsyncClient, None]:
            .replace("postgresql://", "postgresql+asyncpg://")
     )
     engine = create_async_engine(db_url, echo=False)
-    
-    # Initialize DDL schema on container database instance
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    yield engine
+    await engine.dispose()
 
-    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+@pytest_asyncio.fixture
+async def async_client(db_engine) -> AsyncGenerator[AsyncClient, None]:
+    async_session_factory = async_sessionmaker(db_engine, expire_on_commit=False)
 
     async def override_get_db_session() -> AsyncGenerator[AsyncSession, None]:
         async with async_session_factory() as session:
@@ -360,13 +379,20 @@ async def async_client(postgres_container) -> AsyncGenerator[AsyncClient, None]:
         yield client
 
     app.dependency_overrides.clear()
-    await engine.dispose()
+
+@pytest_asyncio.fixture(autouse=True)
+async def cleanup_database(db_engine):
+    """Guarantee zero shared state by truncating tables after each test run."""
+    yield
+    # Post-test cleanup: truncate domain tables on ephemeral container database
+    async with db_engine.begin() as conn:
+        await conn.execute(text("TRUNCATE TABLE orders CASCADE;"))
 
 @pytest.mark.asyncio
 async def test_negative_authorization_bola_returns_403(async_client: AsyncClient):
     """
     Assert BOLA security control: User B (Tenant B) CANNOT fetch Order created by Tenant A.
-    Verifies HTTP 403 Forbidden and standard flat 5-key error payload.
+    Verifies HTTP 403 Forbidden (PERMISSION_DENIED) or 404 Not Found (NOT_FOUND) and standard flat 5-key error payload.
     """
     # 1. Create order owned by Tenant A (tenant identity derived from bearer token context)
     headers_tenant_a = {"Authorization": "Bearer token_tenant_A"}
@@ -388,7 +414,8 @@ async def test_negative_authorization_bola_returns_403(async_client: AsyncClient
     # 3. Assert Negative Authorization behavior & standard 5-key error envelope
     assert authz_res.status_code in (403, 404), "BOLA check failed: Unauthorized tenant accessed resource"
     payload = authz_res.json()
-    assert payload["code"] == "PERMISSION_DENIED"
+    expected_code = "PERMISSION_DENIED" if authz_res.status_code == 403 else "NOT_FOUND"
+    assert payload["code"] == expected_code
     assert "message" in payload
     assert "details" in payload
     assert "timestamp" in payload
@@ -410,12 +437,33 @@ async def test_negative_authorization_bola_returns_403(async_client: AsyncClient
 - [Testcontainers Documentation — Containerized Integration Testing Framework](https://testcontainers.com/): Official spec and documentation for running lightweight, throwaway databases and dependencies in containers during integration testing.
 - [Mock Service Worker (MSW) — API Mocking for Browser and Node](https://mswjs.io/): Wire-level API mocking library for Node.js and browser environments.
 - [WireMock — Flexible HTTP Mocking Tool](https://wiremock.org/): Primary tool for stubbing external HTTP services at the network wire level.
-- [oasdiff — OpenAPI Spec Diff & Breaking Changes Detector](https://github.com/Tufin/oasdiff): Command-line tool and GitHub Action for comparing OpenAPI specifications and enforcing breaking change policies in CI pipelines.
+- [oasdiff — OpenAPI Spec Diff & Breaking Changes Detector](https://github.com/oasdiff/oasdiff): Command-line tool and GitHub Action for comparing OpenAPI specifications and enforcing breaking change policies in CI pipelines.
 - [OpenAPI Specification v3.1.0 & Contract Validation](https://spec.openapis.org/oas/v3.1.0): Official specification for API contract definitions and semantic versioning breaking change policies.
 - [Buf Protocol Buffers Documentation — Breaking Change Detection](https://buf.build/docs/breaking/): Standard for detecting backward-incompatible API changes in Protobuf RPC declarations.
 - [Test Data Factories — FactoryBoy (Python)](https://factoryboy.readthedocs.io/), [Fishery (TypeScript)](https://github.com/thoughtbot/fishery), [Gofakeit (Go)](https://github.com/brianvoe/gofakeit): Programmatic test entity generation libraries for deterministic test state isolation.
 - [GraphQL Inspector & Schema Linter](https://graphql-inspector.com/): Official tooling for GraphQL schema validation, breaking change detection, and CI contract checking.
+- [graphql-schema-linter](https://github.com/cjoudrey/graphql-schema-linter): CLI tool to validate GraphQL schema definitions against production rules.
+- [AsyncAPI Specification v3.0.0](https://www.asyncapi.com/specifications/v3.0.0): Machine-readable spec standard for event-driven and message broker contracts.
 - [httpmock (Go)](https://github.com/jarcoal/httpmock): Wire-level HTTP stubbing library for Go transport testing.
 - [ISO/IEC 25010:2023 — Systems and Software Engineering — Quality Requirements and Evaluation (SQuaRE)](https://www.iso.org/standard/78176.html): International standard for software product quality, test coverage, and reliability measurement.
-- [RFC 9110 — HTTP Semantics (Section 15.5.4 403 Forbidden & Section 15.5.5 404 Not Found)](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.4): Primary IETF specification for HTTP status code authorization and resource masking semantics.
-- [AsyncAPI CLI Diff Command](https://www.asyncapi.com/docs/tools/cli/usage#asyncapi-diff): Official AsyncAPI CLI tool reference for detecting breaking contract changes in message schemas and channels.
+- [W3C Trace Context Specification (W3C Recommendation 23 November 2021)](https://www.w3.org/TR/trace-context/): Standard definition for `traceparent` and `tracestate` header propagation across distributed systems and test runs.
+- [Martin Fowler — Transactional Tests](https://martinfowler.com/bliki/TransactionalTest.html): Architectural guidelines for transaction rollback and database test isolation patterns.
+- [Vitest Testing Framework Documentation](https://vitest.dev/): Next-generation Vite-native unit and integration test framework for Node.js and TypeScript.
+- [pytest-asyncio Documentation](https://pytest-asyncio.readthedocs.io/): Official Pytest plugin for executing asynchronous test coroutines and async fixtures.
+- [Supertest HTTP Assertion Library](https://github.com/ladjs/supertest): High-level abstraction for testing HTTP endpoints in Node.js applications.
+- [Hypothesis — Property-Based Testing for Python](https://hypothesis.readthedocs.io/): Powerful library for property-based test generation in Python.
+- [fast-check — Property-Based Testing for JavaScript & TypeScript](https://fast-check.dev/): Property-based testing framework for JS/TS environments.
+- [golangci-lint Documentation](https://golangci-lint.run/): Fast Go linters runner for static code analysis.
+- [Ruff Linter & Formatter Documentation](https://docs.astral.sh/ruff/): An extremely fast Python linter and code formatter written in Rust.
+- [ESLint Documentation](https://eslint.org/): Pluggable JavaScript and TypeScript static code analysis tool.
+- [Mypy Static Type Checker](https://mypy.readthedocs.io/): Static type checking tool for Python applications.
+- [TypeScript Compiler CLI Reference](https://www.typescriptlang.org/docs/handbook/compiler-options.html): Official CLI flags (`tsc --noEmit`) for static type verification.
+- [Go Vulncheck Documentation](https://go.dev/doc/tutorial/govulncheck): Official Go vulnerability detection tool for dependencies.
+- [pip-audit Vulnerability Scanner](https://pypi.org/project/pip-audit/): CLI tool for scanning Python environments and requirements for known vulnerabilities.
+- [npm-audit CLI Reference](https://docs.npmjs.com/cli/v10/commands/npm-audit): Package vulnerability scanner for Node.js projects.
+- [openapi-diff Tool](https://github.com/OpenAPITools/openapi-diff): Java-based CLI tool for comparing OpenAPI specifications and enforcing compatibility.
+- [pytest-xdist Parallel Test Runner](https://pytest-xdist.readthedocs.io/): Pytest plugin for parallel test execution across CPU cores and isolated workers.
+- [Vitest Pool Threads & Isolation](https://vitest.dev/guide/features.html#threads): Vitest worker pool threads and process isolation configuration.
+- [Go Testing Flags & Parallel Execution](https://pkg.go.dev/testing#hdr-Main): Go standard library testing package documentation covering `-parallel` worker execution.
+- [Go Fuzzing Documentation](https://go.dev/doc/tutorial/fuzz): Official tutorial and specification for native Go property and fuzz testing (`go test -fuzz`).
+- [AsyncAPI Diff Tool](https://github.com/asyncapi/diff): Official CLI repository and documentation for AsyncAPI breaking change detection.
